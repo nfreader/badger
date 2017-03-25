@@ -1,0 +1,23 @@
+{
+  "name": "badger",
+  "homepage": "https://github.com/nfreader/badger",
+  "authors": [
+    "nick@nfreader.net"
+  ],
+  "description": "",
+  "main": "index.php",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "assets/bower",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "tachyons": "^4.6.2",
+    "font-awesome": "^4.7.0"
+  }
+}

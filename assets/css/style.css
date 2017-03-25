@@ -1,0 +1,24 @@
+.xdebug-var-dump {
+  width: 100%;
+  overflow-x: scroll;
+  background: #eee;
+  padding: 10px;
+  border: 1px solid black;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid #ddd;
+}
+
+.table th {
+  font-weight: bold;
+  text-align: left;
+  background: #eee
+}
+
+.table th, .table td {
+  border: 1px solid #ddd;
+  padding: 5px;
+}
