@@ -28,9 +28,9 @@
     </thead>
     <tbody>
     <?php foreach ($user->orgs as $o):?>
-      <tr>
+      <tr class="bg-<?php echo $o->class;?>">
         <td><?php echo $o->link;?></td>
-        <td>0</td>
+        <td><?php echo $o->membercount;?></td>
         <td><?php echo $o->created;?></td>
         <td><?php echo $o->userStatus;?></td>
       </tr>
@@ -51,6 +51,9 @@
 
 <h2 class="f4 lh-title bb b-black">
   User Meta Fields
+  <?php if ($user->isSuperAdmin()):?>
+    <small><a href="?action=userMetaFields">Edit Fields</a></small>
+  <?php endif;?>
 </h2>
 
 <?php $fields = $app->getUserMetaFields(); ?>
@@ -85,4 +88,6 @@
     <?php endforeach;?>
     </tbody>
   </table>
+<?php else:?>
+  <?php echo alert("No meta fields defined.");?>
 <?php endif; ?>

@@ -67,8 +67,95 @@ if(!$user->online){ //Guest actions
       $app->setinclude('organization');
     break;
 
+    case 'applyToOrg':
+      $app->setmsg($user->applyToOrg($_GET['org']));
+      $app->setinclude('organization');
+    break;
+
+    case 'approveMembership':
+      $app->setmsg($user->approveOrgMembership($_GET['user'],$_GET['org']));
+      $app->setinclude('orgMember');
+    break;
+
+    case 'cancelMembership':
+      $app->setmsg($user->removeOrgMembership($_GET['user'],$_GET['org']));
+      $app->setinclude('organization');
+    break;
+
+    case 'denyMembership':
+      $app->setmsg($user->removeOrgMembership($_GET['user'],$_GET['org']));
+      $app->setinclude('organization');
+    break;
+
+    case 'promoteOrgLeader':
+      $app->setmsg($user->promoteToLeader($_GET['user'],$_GET['org']));
+      $app->setinclude('orgMember');
+    break;
+
+    case 'demoteOrgLeader':
+      $app->setmsg($user->demoteOrgLeader($_GET['user'],$_GET['org']));
+      $app->setinclude('orgMember');
+    break;
+
+    case 'addMember':
+      $app->setInclude('addMember');
+    break;
+
+    case 'addUserToOrg':
+      $app->setmsg($user->addMemberToOrg($_GET['user'],$_GET['org']));
+      $app->setInclude('addMember');
+    break;
+
     case 'me':
       $app->setinclude('me');
+    break;
+
+    case 'viewOrgMember':
+      $app->setinclude('orgMember');
+    break;
+
+    case 'manageTeams':
+      $app->setinclude('manageTeams');
+    break;
+
+    case 'manageAbilities':
+      $app->setinclude('abilities');
+    break;
+
+    case 'newAbility':
+      $ability = new ability();
+      $app->setmsg($ability->addNewAbility($_GET['org'],
+        $_POST['name'],
+        $_POST['icon'],
+        $_POST['color']));
+      $app->setInclude('abilities');
+    break;
+
+    case 'newTeam':
+      $org = new organization($_GET['org']);
+      $app->setmsg($org->addTeam($_POST['name']));
+      $app->setInclude('manageTeams');
+    break;
+
+    case 'manageTeamAbilities':
+      $org = new organization();
+      $team = $org->getTeam($_GET['team']);
+      $app->setmsg($org->manageTeamRequirements($team->id, $_POST));
+      $app->setInclude('manageTeams');
+    break;
+
+    case 'addTeamRequirement':
+      $org = new organization();
+      $team = $org->getTeam($_GET['team']);
+      $app->setmsg($org->addTeamRequirement($team->id, $_GET['ability']));
+      $app->setInclude('manageTeams');
+    break;
+
+    case 'removeTeamRequirement':
+      $org = new organization();
+      $team = $org->getTeam($_GET['team']);
+      $app->setmsg($org->deleteTeamRequirement($team->id, $_GET['ability']));
+      $app->setInclude('manageTeams');
     break;
   }
 }

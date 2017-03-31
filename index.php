@@ -15,7 +15,7 @@ $user = new user(TRUE);
   <title></title>
   <link rel="stylesheet" href="<?php echo $app->app_URL;?>/assets/bower/tachyons/css/tachyons.min.css"/>
   <link rel="stylesheet" href="<?php echo $app->app_URL;?>/assets/bower/font-awesome/css/font-awesome.min.css"/>
-  <link rel="stylesheet" href="<?php echo $app->app_URL;?>/assets/css/style.css"/>
+  <link rel="stylesheet" href="<?php echo $app->app_URL;?>/assets/css/style.css<?php echo (DEBUG)?"?v=".time():'';?>"/>
 </head>
 <body class="ma0 ph0 sans-serif">
   <?php include ('view/nav.php'); ?>

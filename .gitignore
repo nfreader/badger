@@ -1,4 +1,4 @@
 assets/bower/*
 inc/vendor/*
 composer.lock
-
+config.php

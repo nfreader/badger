@@ -6,66 +6,56 @@
   public $orgs = false;
   public $metadata = false;
 
-  public function __construct($full=FALSE){
-    if(isset($_SESSION['id'])){
-      $user = $this->getUser($_SESSION['id']);
-      if($full){
-        $user->orgs = $this->getUserOrganizations($user->id);
-        $user->abilities = $this->getUserAbilities($user->id);
-        $user->metadata = $this->getUserActiveMetaFields($user->id);
-      }
-      $user = $this->parseUser($user);
+  public function __construct($full=FALSE, $id=null){
+    if(!$id && isset($_SESSION['id'])){
+      $user = $this->getUser($_SESSION['id'], $full);
       foreach ($user as $k => $v){
         $_SESSION[$k] = $v;
-        $this->$k = $v;
       }
       $this->online = TRUE;
+    } elseif($id) {
+      $user = $this->getUser($id,$full);
     } else {
       return false;
     }
   }
 
   public function parseUser(&$user){
-
-    if(isset($user->metadata)){
-      foreach ($user->metadata as $d){
-        $name = $d->field;
-        $user->$name = $d->value;
-      }
-      if (isset($user->{'Real name'})){
-        $user->username = $user->{'Real name'};
-      }
-    }
-
-    if(isset($user->orgs)){
-      $organization = new organization();
+    //Parse organizations
+    if(isset($user->orgs) && $user->orgs[0]->id){
       foreach ($user->orgs as &$o){
-        $o = $organization->parseOrg($o);
         if (!$o->relation){
-          $o->userStatus = "Not a member. Apply to join?";
+          $o->userStatus = "Not a member. ".btn("Apply to join?","applyToOrg&org=$o->id",1);
+          $o->class = "";
         } else {
           switch ($o->relation){
             case 'R':
               $o->userStatus = "Application Pending";
+              $o->class = "washed-yellow";
             break;
 
             case 'M':
               $o->userStatus = "Active Member";
+              $o->class = "washed-green";
             break;
 
             case 'L':
               $o->userStatus = "Org Leader";
+              $o->class = "washed-orange";
             break;
           }
         }
       }
     }
 
+    //Basic user data
     $user->since = date('F Y',strtotime($user->created));
 
     $user->foreColor = 'white';
     $user->backColor = '';
     $user->icon = '';
+    $user->fullRank = 'User';
+
 
     switch ($user->rank){
       case 'SA':
@@ -90,9 +80,9 @@
     return $user;
   }
 
-  public function getUser($id){
+  public function getUser($id, $full){
     $db = new database();
-    $db->query("SELECT id, username, email, rank, name,
+    $db->query("SELECT id, username, email, rank,
         created, status
       FROM tbl_user
       WHERE id = ?");
@@ -102,7 +92,18 @@
     } catch (Exception $e) {
       return returnError("Database error: ".$e->getMessage());
     }
-    return $db->single();
+    $user = $db->single();
+    if($full){
+      $org = new organization();
+      $user->orgs = $org->getUserOrganizations($user->id);
+      $user->abilities = $this->getUserAbilities($user->id);
+      $user->metadata = $this->getUserActiveMetaFields($user->id);
+    }
+    $user = $this->parseUser($user);
+    foreach ($user as $k => $v){
+      $this->$k = $v;
+    }
+    return $user;
   }
 
   public function getUserAbilities($user){
@@ -199,7 +200,7 @@
     if(!password_verify($password, $user->password)) {
       return returnError("Incorrect password");
     } else {
-      $db->query("SELECT id, username, email, rank, name,
+      $db->query("SELECT id, username, email, rank,
         created, status
       FROM tbl_user
       WHERE username = :username");
@@ -262,16 +263,20 @@
   }
 
   public function isSuperAdmin() {
-    if ("SA" === $this->rank) {
-      $db = new database();
-      $db->query("SELECT rank FROM tbl_user WHERE tbl_user.id = :id");
-      $db->bind(':id',$this->id);
-      if ($db->single()->rank === 'SA') {
+    if(isset($_SESSION['id'])){
+      if ("SA" === $this->rank) {
+        // $db = new database();
+        // $db->query("SELECT rank FROM tbl_user WHERE tbl_user.id = :id");
+        // $db->bind(':id',$_SESSION['id']);
+        // if ($db->single()->rank === 'SA') {
+        //   return true;
+        // }
         return true;
+      } else {
+        return false;
       }
-    } else {
-      return false;
     }
+    return false;
   }
 
   public function getUserActiveMetaFields($id){
@@ -314,50 +319,107 @@
     return returnSuccess("Meta field updated!");
   }
 
-  public function getUserOrganizations(){
+  public function canUserManageOrg($org){
+    if($this->isSuperAdmin()){
+      return true;
+    }
     $db = new database();
     if($db->abort){
       return FALSE;
     }
-    $db->query("SELECT bg_organization.*,
-      membership.*
-      FROM bg_organization
-      LEFT JOIN bg_org_members AS membership ON bg_organization.id = membership.org
-      WHERE membership.user = ? AND bg_organization.public = 0
-      OR membership.user = 1 OR membership.user IS NULL AND bg_organization.public = 1;");
-    $db->bind(1, $this->id);
+    $db->query("SELECT relation FROM tbl_org_members
+      WHERE org = ? AND user = ?");
+    $db->bind(1,$org);
+    $db->bind(2,$this->id);
     try {
       $db->execute();
     } catch (Exception $e) {
       return returnError("Database error: ".$e->getMessage());
     }
-    return $db->resultset();
+    if ('L' === $db->single()->relation) return true;
+    return false;
   }
 
-  public function applyToOrganization($org){
-    $this->changeUserOrgMemberStatus($org, 'R');
-    return returnSuccess("You have applied to this organization");
-  }
-
-  public function changeUserOrgMemberStatus($org, $status){
+  public function changeUserOrgMemberStatus($org, $relation, $user=null){
     $db = new database();
     if($db->abort){
       return FALSE;
     }
-    $db->query("INSERT INTO tbl_org_members (org, `user`, relation, `status`,
-      `timestamp`) VALUES(?,?,?,?,NOW())
+    $db->query("INSERT INTO tbl_org_members (org, `user`, relation,
+      `timestamp`) VALUES(?,?,?,NOW())
       ON DUPLICATE KEY UPDATE relation = ?");
     $db->bind(1, $org);
-    $db->bind(2, $this->id);
+    $db->bind(2, $user);
     $db->bind(3, $relation);
-    $db->bind(4, $status);
-    $db->bind(5, $relation);
+    $db->bind(4, $relation);
     try {
       $db->execute();
     } catch (Exception $e) {
       return returnError("Database error: ".$e->getMessage());
     }
     return TRUE;
+  }
+
+  public function applyToOrg($org){
+    $user = new user();
+    $this->changeUserOrgMemberStatus($org, 'R', $user->id);
+    return returnSuccess("You have applied to this organization");
+  }
+
+  public function approveOrgMembership($user,$org){
+    if(!$this->canUserManageOrg($org)){
+      return returnError("You do not have permission to do this.");
+    }
+    $user = new user(FALSE, $user);
+    $this->changeUserOrgMemberStatus($org, 'M', $user->id);
+    return returnSuccess("$user->username is now a member of this organization.");
+  }
+
+  public function promoteToLeader($user,$org){
+    if(!$this->canUserManageOrg($org)){
+      return returnError("You do not have permission to do this.");
+    }
+    $user = new user(FALSE, $user);
+    $this->changeUserOrgMemberStatus($org, 'L', $user->id);
+    return returnSuccess("$user->username is now a leader of this organization.");
+  }
+
+  public function demoteOrgLeader($user,$org){
+    if(!$this->canUserManageOrg($org)){
+      return returnError("You do not have permission to do this.");
+    }
+    $user = new user(FALSE, $user);
+    $this->changeUserOrgMemberStatus($org, 'M', $user->id);
+    return returnSuccess("$user->username is no longer a leader of this organization.");
+  }
+
+  public function addMemberToOrg($user,$org){
+    if(!$this->canUserManageOrg($org)){
+      return returnError("You do not have permission to do this.");
+    }
+    $user = new user(FALSE, $user);
+    $this->changeUserOrgMemberStatus($org, 'M', $user->id);
+    return returnSuccess("$user->username is now a member of this organization.");
+  }
+
+  public function removeOrgMembership($user, $org){
+    if(!$this->canUserManageOrg($org)){
+      return returnError("You do not have permission to do this.");
+    }
+    $user = new user($user);
+    $db = new database();
+    if($db->abort){
+      return FALSE;
+    }
+    $db->query("DELETE FROM tbl_org_members WHERE user = ? AND org = ?");
+    $db->bind(1,$user->id);
+    $db->bind(2,$org);
+    try {
+      $db->execute();
+    } catch (Exception $e) {
+      return returnError("Database error: ".$e->getMessage());
+    }
+    return returnSuccess("$user->username has been removed from this organization");
   }
 
 }

@@ -18,7 +18,8 @@
   background: #eee
 }
 
-.table th, .table td {
+th, td {
   border: 1px solid #ddd;
   padding: 5px;
+  vertical-align: middle;
 }

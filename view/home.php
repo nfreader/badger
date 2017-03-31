@@ -4,6 +4,10 @@
 
 <?php if($user->isSuperAdmin()):?>
 
+  <h2 class="f4 lh-title bb b-black">
+    Organizations
+  </h2>
+
 <?php $orgs = new organization();
   $orgs = $orgs->getOrganizations();
   if ($orgs): ?>
@@ -20,7 +24,7 @@
     <?php foreach ($orgs as $o):?>
       <tr>
         <td><?php echo $o->link;?></td>
-        <td>0</td>
+        <td><?php echo $o->membercount;?></td>
         <td><?php echo $o->created;?></td>
         <td class="<?php echo ($o->public)?'bg-washed-green':'bg-washed-red';?>">
         <?php echo $o->publicStatus;?></td>
