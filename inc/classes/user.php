@@ -51,9 +51,9 @@
     //Basic user data
     $user->since = date('F Y',strtotime($user->created));
 
-    $user->foreColor = 'white';
-    $user->backColor = '';
-    $user->icon = '';
+    $user->foreColor = 'black';
+    $user->backColor = 'white';
+    $user->icon = "<i class='fa fa-user'></i>";
     $user->fullRank = 'User';
 
 
@@ -72,7 +72,7 @@
         $user->icon = "<i class='fa fa-check'></i>";
       break;
     }
-    $user->label = "<a class='link dim white f6 ";
+    $user->label = "<a class='link dim f6 ";
     $user->label.= "bg-$user->backColor $user->foreColor ph2 pv1 br2 b' ";
     $user->label.= "href='?action=me' title='User Page'>";
     $user->label.= "$user->icon $user->username</a>";

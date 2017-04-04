@@ -81,7 +81,7 @@
 
     $team->link = "<a href='?action=manageTeams&team=$team->id'>";
     $team->link.= "$team->name</a>";
-
+    $team->members = array();
     $team->membercount = "TBD";
 
     return $team;

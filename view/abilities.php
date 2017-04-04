@@ -31,7 +31,8 @@ if (isset($_GET['ability'])){
 
 <?php if ($ability):?>
   <div class="tc">
-    <?php echo $ability->html;?>
+    <?php echo $ability->html;?><br>
+    <p class='f3'><?php echo $ability->desc;?></p>
   </div>
 <?php elseif (!$org->abilities):?>
   <?php echo alert("No abilities.");?>
@@ -59,6 +60,10 @@ if (isset($_GET['ability'])){
         <label class="db b w-100 mb1" for="name">Color</label>
         <div id="color">
         </div>
+      </div>
+      <div class="cf mb4">
+        <label class="db b w-100 mb1" for="name">Description</label>
+        <textarea name="desc" rows="5" class="w-100"></textarea>
       </div>
       <div>
         <input class="ph3 pv1 b input-reset ba b--black bg-transparent db w-100 hover-bg-black hover-washed-yellow pointer" type="submit" value="Create Ability">

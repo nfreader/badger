@@ -1,12 +1,17 @@
-<?php
+  <?php
 $team = false;
 if (isset($_GET['team'])){
   $team = filter_input(INPUT_GET, 'team', FILTER_SANITIZE_NUMBER_INT);
   $org = new organization();
   $team = $org->getTeam($team);
-  $org = new organization($team->id,TRUE);
+  $org = new organization($team->org,TRUE);
   $diff = false;
   $diff = array_udiff($org->abilities, $team->requirements,
+    function ($obj_a, $obj_b) {
+      return $obj_a->id - $obj_b->id;
+    }
+  );
+  $memberdiff = array_udiff($org->members, $team->members,
     function ($obj_a, $obj_b) {
       return $obj_a->id - $obj_b->id;
     }
@@ -14,7 +19,7 @@ if (isset($_GET['team'])){
 } else {
 if (!isset($_GET['org'])) echo alert('No organization found!',0);
   $org = filter_input(INPUT_GET, 'org', FILTER_SANITIZE_NUMBER_INT);
-  $org = new organization($org,FALSE);
+  $org = new organization($org,TRUE);
 }
 ?>
 
@@ -28,7 +33,7 @@ if (!isset($_GET['org'])) echo alert('No organization found!',0);
 
 <h2 class="f2 lh-title bb b-black bw1 mt0 pl3">
 <?php if ($team):?>
-  <?php echo $team->name;?>
+  <?php echo $team->name;?> <small><?php echo $team->membercount;?></small>
 <?php else:?>
   Teams
 <?php endif;?>
@@ -38,11 +43,11 @@ if (!isset($_GET['org'])) echo alert('No organization found!',0);
   <h3 class="f4 lh-title bb b-black">
     Manage Team Abilities<small>
       <?php if($user->canUserManageOrg($org->id)):?>
-        <a href="?action=manageAbilities&org=<?php echo $org->id;?>">Manage Abilities</a>
+        <a href="?action=manageAbilities&org=<?php echo $org->id;?>">Manage Organization Abilities</a>
       <?php endif;?>
     </small>
   </h3>
-  <div class="cf">
+  <div class="cf row">
     <div class="w-50 ph2 fl">
       <h3 class="f4 lh-title bb b-black">Available Abilities</h3>
       <?php foreach ($diff as $a):?>
@@ -66,6 +71,56 @@ if (!isset($_GET['org'])) echo alert('No organization found!',0);
       <?php endforeach;?>
     </div>
   </div>
+
+  <h3 class="f4 lh-title bb b-black">
+    Manage Team Members
+  </h3>
+  <div class="cf row">
+    <div class="w-50 ph2 fl">
+    <?php if($user->canUserManageOrg($org->id)):?>
+      <h3 class="f4 lh-title bb b-black">Available Members</h3>
+      <?php foreach ($memberdiff as $m):?>
+        <div class="dib">
+          <?php echo $m->label;?>
+          <?php echo btn("Add","addToTeam&user=$m->id&team=$team->id",1);?>
+        </div>
+      <?php endforeach;?>
+    <?php endif;?>
+    </div>
+    <div class="w-50 ph2 fl">
+      <h3 class="f4 lh-title bb b-black">Active Members</h3>
+      <?php foreach ($team->members as $m):?>
+        <div class="dib">
+          <?php echo $m->html;?>
+        </div>
+      <?php endforeach;?>
+    </div>
+  </div>
+<?php else:?>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Member Count</th>
+        <th>Required Abilities</th>
+        <th>Since</th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($org->teams as $t):?>
+      <tr>
+        <td><?php echo $t->link;?></td>
+        <td><?php echo $t->membercount;?></td>
+        <td><?php
+        foreach ($t->requirements as $r){
+          echo $r->html." ";
+        }
+        ?></td>
+        <td><?php echo $t->since;?></td>
+      </tr>
+    <?php endforeach;?>
+    </tbody>
+  </table>
 <?php endif;?>
 
 <?php if(!$team && $user->canUserManageOrg($org->id)):?>

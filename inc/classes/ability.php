@@ -8,6 +8,8 @@ class ability {
   public $name;
   public $icon;
   public $color;
+  public $desc;
+  
   public $created;
 
   public $since;
